@@ -142,5 +142,6 @@ var $plugins =
 {"name":"VictoryNoGameOver","status":true,"description":"전투에서 승리한 직후에는, 파티원이 한 명이라도 살아있으면 게임오버로 넘어가지 않게 합니다.","parameters":{"Guard Frames":"300","Debug Log":"true"}},
 {"name":"FallToStart","status":true,"description":"특정 리전 ID 타일을 밟으면 아래로 떨어진 뒤 시작지점으로 되돌아가는 플러그인 v1.0","parameters":{"RegionIds":"2","TargetMapIds":"97","StartMapId":"97","StartX":"0","StartY":"7","FallFrames":"40","FallDistance":"96","FallSe":"Fall","FallSeVolume":"90","FallSePitch":"100","DisableSwitchId":"0"}},
 {"name":"EnemyTargetFilter","status":true,"description":"특정 적이 특정 액터만 공격하거나 특정 액터를 피하도록 설정합니다.","parameters":{}},
-{"name":"GaugeColorOverride","status":true,"description":"HP/TP 게이지 색상을 플러그인 파라미터로 지정합니다.","parameters":{"HP Color 1":"#ff0000","HP Color 2":"#ff0000","TP Color 1":"#0000ff","TP Color 2":"#0000ff"}}
+{"name":"GaugeColorOverride","status":true,"description":"HP/TP 게이지 색상을 플러그인 파라미터로 지정합니다.","parameters":{"HP Color 1":"#ff0000","HP Color 2":"#ff0000","TP Color 1":"#0000ff","TP Color 2":"#0000ff"}},
+{"name":"SkillCutIn","status":true,"description":"v1.0 특정 스킬 사용 전, 사진 2장이 교차로 지나가는 연출(빠르게→느리게→빠르게) 후 스킬 발동","parameters":{"Picture1":"CutIn1","Picture2":"CutIn2","Y1":"0","Y2":"-1","FastFrames":"5","SlowFrames":"100","SlowDistance":"160","OverWindows":"true"}}
 ];
