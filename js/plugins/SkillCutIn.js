@@ -51,6 +51,34 @@
  * @min 0
  * @default 160
  *
+ * @param SeName
+ * @text 효과음 파일
+ * @desc 사진이 나타날 때 재생할 효과음 (audio/se). 비워두면 재생하지 않음.
+ * @type file
+ * @dir audio/se/
+ * @default
+ *
+ * @param SeVolume
+ * @text 효과음 볼륨
+ * @type number
+ * @min 0
+ * @max 100
+ * @default 90
+ *
+ * @param SePitch
+ * @text 효과음 피치
+ * @type number
+ * @min 50
+ * @max 150
+ * @default 100
+ *
+ * @param SePan
+ * @text 효과음 팬
+ * @type number
+ * @min -100
+ * @max 100
+ * @default 0
+ *
  * @param OverWindows
  * @text 윈도우 위에 표시
  * @desc ON이면 상태창 등 윈도우보다 위에, OFF이면 아래에 표시합니다.
@@ -69,6 +97,7 @@
  *   사진1 : 왼쪽 → 오른쪽
  *   사진2 : 오른쪽 → 왼쪽
  *   속도  : 빠르게 등장 → 중앙에서 느리게 통과 → 빠르게 퇴장
+ *   효과음 : 사진이 나타나는 순간 1회 재생 (파라미터 '효과음 파일')
  *   끝나면 : 스킬 발동 (스킬명 표시, 애니메이션, 대미지 등)
  *
  * ----------------------------------------------------------------------------
@@ -104,7 +133,11 @@
         fast: Math.max(1, Number(params['FastFrames'] || 10)),
         slow: Math.max(1, Number(params['SlowFrames'] || 60)),
         slowDist: Number(params['SlowDistance'] !== undefined ? params['SlowDistance'] : 160),
-        overWindows: String(params['OverWindows'] || 'true') === 'true'
+        overWindows: String(params['OverWindows'] || 'true') === 'true',
+        seName: String(params['SeName'] || ''),
+        seVolume: Number(params['SeVolume'] !== undefined ? params['SeVolume'] : 90),
+        sePitch: Number(params['SePitch'] !== undefined ? params['SePitch'] : 100),
+        sePan: Number(params['SePan'] !== undefined ? params['SePan'] : 0)
     };
 
     //-------------------------------------------------------------------------
@@ -131,11 +164,12 @@
     Sprite_SkillCutIn.prototype.constructor = Sprite_SkillCutIn;
 
     // direction: 1 = 왼쪽→오른쪽, -1 = 오른쪽→왼쪽
-    Sprite_SkillCutIn.prototype.initialize = function(name, direction, yParam, onFinish) {
+    Sprite_SkillCutIn.prototype.initialize = function(name, direction, yParam, onStart, onFinish) {
         Sprite.prototype.initialize.call(this);
         this.bitmap = ImageManager.loadPicture(name);
         this._direction = direction;
         this._yParam = yParam;
+        this._onStart = onStart;
         this._onFinish = onFinish;
         this._count = -1;       // -1: 이미지 로딩 대기
         this._waitCount = 0;
@@ -184,6 +218,7 @@
         this.x = this._x0;
         this._count = 0;
         this.visible = true;
+        if (this._onStart) this._onStart();
     };
 
     Sprite_SkillCutIn.prototype.updateMotion = function() {
@@ -242,9 +277,25 @@
 
     Scene_Battle.prototype.startSkillCutIn = function(name1, name2) {
         this._cutInRemain = 2;
+        this._cutInSePlayed = false;
+        var onStart = this.onSkillCutInStart.bind(this);
         var onFinish = this.onSkillCutInFinish.bind(this);
-        this._cutInLayer.addChild(new Sprite_SkillCutIn(name1, 1, P.y1, onFinish));
-        this._cutInLayer.addChild(new Sprite_SkillCutIn(name2, -1, P.y2, onFinish));
+        this._cutInLayer.addChild(new Sprite_SkillCutIn(name1, 1, P.y1, onStart, onFinish));
+        this._cutInLayer.addChild(new Sprite_SkillCutIn(name2, -1, P.y2, onStart, onFinish));
+    };
+
+    // 사진이 처음 나타나는 순간, 효과음을 한 번만 재생
+    Scene_Battle.prototype.onSkillCutInStart = function() {
+        if (this._cutInSePlayed) return;
+        this._cutInSePlayed = true;
+        if (P.seName) {
+            AudioManager.playSe({
+                name: P.seName,
+                volume: P.seVolume,
+                pitch: P.sePitch,
+                pan: P.sePan
+            });
+        }
     };
 
     Scene_Battle.prototype.onSkillCutInFinish = function() {
