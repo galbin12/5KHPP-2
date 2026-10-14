@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc v1.1 물 뿌리기 미니게임 (클릭 → 칙칙 소리 + 물방울, 목표 횟수를 채우면 완료)
+ * @plugindesc v1.2 물 뿌리기 미니게임 (클릭 → 칙칙 소리 + 물방울, 목표 횟수를 채우면 완료)
  * @author Claude
  *
  * @param TargetCount
@@ -31,6 +31,20 @@
  * @dir img/pictures/
  * @desc 비워두면 기본 배경을 사용
  * @default
+ *
+ * @param BackgroundFit
+ * @text 배경 맞춤 방식
+ * @type select
+ * @option 세로 비율에 맞춤 (가로는 가운데 정렬)
+ * @value height
+ * @option 화면을 꽉 채움 (넘치는 부분은 잘림)
+ * @value cover
+ * @option 전체가 보이게 맞춤 (남는 부분은 기본 배경)
+ * @value contain
+ * @option 화면 크기에 늘려 맞춤 (비율 무시)
+ * @value stretch
+ * @desc 배경 이미지를 화면에 맞추는 방식
+ * @default height
  *
  * @param SeName
  * @text 효과음 파일
@@ -92,6 +106,7 @@
     var paramSwitch = Number(params['CompleteSwitchId'] || 0);
     var paramVariable = Number(params['CountVariableId'] || 0);
     var paramBackground = String(params['BackgroundImage'] || '');
+    var paramBackgroundFit = String(params['BackgroundFit'] || 'height');
     var paramSeName = String(params['SeName'] || '');
     var paramSeVolume = Number(params['SeVolume'] || 90);
     var paramSePitch = Number(params['SePitch'] || 100);
@@ -222,13 +237,48 @@
     };
 
     Scene_WaterSpray.prototype.createBackground = function() {
-        this._backSprite = new Sprite();
+        // 기본 배경은 항상 깔아둠 (이미지가 화면을 다 못 덮을 때 양옆을 채움)
+        this._baseSprite = new Sprite(makeBackgroundBitmap());
+        this.addChild(this._baseSprite);
+        this._backSprite = null;
+        this._backFitted = true;
         if (paramBackground) {
-            this._backSprite.bitmap = ImageManager.loadPicture(paramBackground);
-        } else {
-            this._backSprite.bitmap = makeBackgroundBitmap();
+            this._backSprite = new Sprite(ImageManager.loadPicture(paramBackground));
+            this._backSprite.anchor.x = 0.5;
+            this._backSprite.anchor.y = 0.5;
+            this._backSprite.x = Graphics.width / 2;
+            this._backSprite.y = Graphics.height / 2;
+            this._backFitted = false;
+            this.addChild(this._backSprite);
         }
-        this.addChild(this._backSprite);
+    };
+
+    // 이미지 로딩이 끝나면 한 번만 크기를 맞춤 (원본 비율 유지)
+    Scene_WaterSpray.prototype.updateBackgroundFit = function() {
+        if (this._backFitted) return;
+        var bmp = this._backSprite.bitmap;
+        if (!bmp || !bmp.isReady() || bmp.width <= 0 || bmp.height <= 0) return;
+        var sw = Graphics.width / bmp.width;
+        var sh = Graphics.height / bmp.height;
+        var sx, sy;
+        switch (paramBackgroundFit) {
+        case 'cover':
+            sx = sy = Math.max(sw, sh);
+            break;
+        case 'contain':
+            sx = sy = Math.min(sw, sh);
+            break;
+        case 'stretch':
+            sx = sw;
+            sy = sh;
+            break;
+        default: // 'height'
+            sx = sy = sh;
+            break;
+        }
+        this._backSprite.scale.x = sx;
+        this._backSprite.scale.y = sy;
+        this._backFitted = true;
     };
 
     Scene_WaterSpray.prototype.createDropLayer = function() {
@@ -272,6 +322,7 @@
 
     Scene_WaterSpray.prototype.update = function() {
         Scene_Base.prototype.update.call(this);
+        this.updateBackgroundFit();
         this.updateInput();
         this.updateDrops();
         this.updateComplete();
